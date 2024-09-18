@@ -1,26 +1,78 @@
-import 'dart:io'; // To handle File
-import 'package:ecommerceappcrud/widget/commontextfiled.dart';
+import 'dart:io';
+import 'package:ecommerceappcrud/adminside/optionscreen.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart'; // Import the image picker package
- // Import the CommonTextField widget
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:ecommerceappcrud/services/addproductservice.dart';
 
-class AddProductScreen extends StatefulWidget {
+class ProductScreen extends StatefulWidget {
+  ProductScreen({super.key});
+
   @override
-  _AddProductScreenState createState() => _AddProductScreenState();
+  State<ProductScreen> createState() => _ProductScreenState();
 }
 
-class _AddProductScreenState extends State<AddProductScreen> {
-  final TextEditingController productNameController = TextEditingController();
-  final TextEditingController productPriceController = TextEditingController();
-  File? _selectedImage; // To store the selected image file
+class _ProductScreenState extends State<ProductScreen> {
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _priceController = TextEditingController();
+  File? _imageFile;
+  final ImagePicker _picker = ImagePicker();
 
-  // Function to pick an image from the gallery
   Future<void> _pickImage() async {
-    final pickedImage = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (pickedImage != null) {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
       setState(() {
-        _selectedImage = File(pickedImage.path); // Set the selected image
+        _imageFile = File(pickedFile.path);
       });
+    }
+  }
+
+  Future<String> _uploadImage(File image) async {
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+      final storageRef =
+          FirebaseStorage.instance.ref().child('product_images').child('$uid.jpg');
+      await storageRef.putFile(image);
+      return await storageRef.getDownloadURL();
+    } catch (e) {
+      print('Image upload error: $e');
+      throw e;
+    }
+  }
+
+  Future<void> _saveProduct() async {
+    if (_nameController.text.isEmpty || _priceController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Product name and price cannot be empty')),
+      );
+      return;
+    }
+
+    try {
+      String? imageUrl;
+      if (_imageFile != null) {
+        imageUrl = await _uploadImage(_imageFile!);
+      }
+
+      await FirestoreService().saveProduct(
+        _nameController.text,
+        _priceController.text,
+        imageUrl,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Product saved successfully')),
+      );
+
+      // Navigate to the next screen after saving the product
+      Navigator.push(context, MaterialPageRoute(builder: (context)=>SelectionScreen1())); // or use Navigator.pushReplacement to navigate to another screen
+    } catch (e) {
+      print('Product save error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to save product. Please try again.')),
+      );
     }
   }
 
@@ -28,72 +80,50 @@ class _AddProductScreenState extends State<AddProductScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Add Product"),
-        centerTitle: true,
+        title: Text('Add Product'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Display the selected image or a placeholder
             GestureDetector(
-              onTap: _pickImage, // Trigger image picker when tapped
-              child: _selectedImage != null
-                  ? Image.file(
-                      _selectedImage!,
-                      width: 150,
-                      height: 150,
-                      fit: BoxFit.cover,
-                    )
-                  : Image.asset(
-                      'assets/image/download (3).jpeg', // Placeholder image
-                      width: 150,
-                      height: 150,
-                    ),
-            ),
-            SizedBox(height: 20),
-            
-            // Product Name TextField
-            CommonTextField(
-              controller: productNameController,
-              hintText: "Enter product name",
-              prefixIcon: Icons.shopping_bag,
-            ),
-            SizedBox(height: 16),
-            
-            // Product Price TextField
-            CommonTextField(
-              controller: productPriceController,
-              hintText: "Enter product price",
-              prefixIcon: Icons.attach_money,
-              keyboardType: TextInputType.number, // Numeric keyboard for price
-            ),
-            SizedBox(height: 20),
-            
-            // Add Button
-            ElevatedButton(
-              onPressed: () {
-                // Handle add product logic here
-                String productName = productNameController.text;
-                String productPrice = productPriceController.text;
-
-                if (_selectedImage == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Please select an image!")),
-                  );
-                  return;
-                }
-
-                print("Product Name: $productName");
-                print("Product Price: $productPrice");
-                print("Selected Image Path: ${_selectedImage!.path}");
-
-                // You can add the logic to store the product details
-              },
-              child: Text("Add Product"),
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(horizontal: 50, vertical: 16),
+              onTap: _pickImage,
+              child: CircleAvatar(
+                radius: 50,
+                backgroundColor: Colors.grey[300],
+                child: _imageFile == null
+                    ? Icon(Icons.add_a_photo, size: 50, color: Colors.white)
+                    : ClipOval(
+                        child: Image.file(
+                          _imageFile!,
+                          fit: BoxFit.cover,
+                          width: 100,
+                          height: 100,
+                        ),
+                      ),
               ),
+            ),
+            SizedBox(height: 20),
+            TextField(
+              controller: _nameController,
+              decoration: InputDecoration(
+                labelText: 'Product Name',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            SizedBox(height: 20),
+            TextField(
+              controller: _priceController,
+              decoration: InputDecoration(
+                labelText: 'Product Price',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _saveProduct, // Call the save product function
+              child: Text('Save Product'),
             ),
           ],
         ),
@@ -101,4 +131,3 @@ class _AddProductScreenState extends State<AddProductScreen> {
     );
   }
 }
-

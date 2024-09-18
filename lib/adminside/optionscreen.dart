@@ -25,7 +25,7 @@ class SelectionScreen1 extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => AddProductScreen ()),
+                  MaterialPageRoute(builder: (context) => ProductScreen ()),
                 );
               },
               child: Text('Add Product'),

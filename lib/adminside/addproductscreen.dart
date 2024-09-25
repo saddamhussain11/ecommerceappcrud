@@ -32,8 +32,10 @@ class _ProductScreenState extends State<ProductScreen> {
   Future<String> _uploadImage(File image) async {
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
-      final storageRef =
-          FirebaseStorage.instance.ref().child('product_images').child('$uid.jpg');
+      final storageRef = FirebaseStorage.instance
+          .ref()
+          .child('product_images')
+          .child('$uid.jpg');
       await storageRef.putFile(image);
       return await storageRef.getDownloadURL();
     } catch (e) {
@@ -67,7 +69,8 @@ class _ProductScreenState extends State<ProductScreen> {
       );
 
       // Navigate to the next screen after saving the product
-      Navigator.push(context, MaterialPageRoute(builder: (context)=>SelectionScreen1())); // or use Navigator.pushReplacement to navigate to another screen
+      Navigator.push(context,
+          MaterialPageRoute(builder: (context) => SelectionScreen1()));
     } catch (e) {
       print('Product save error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -122,7 +125,7 @@ class _ProductScreenState extends State<ProductScreen> {
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: _saveProduct, // Call the save product function
+              onPressed: _saveProduct,
               child: Text('Save Product'),
             ),
           ],

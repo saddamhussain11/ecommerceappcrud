@@ -8,7 +8,7 @@ class FirestoreService {
       await _db.collection('products').add({
         'name': name,
         'price': price,
-        'imageUrl': imageUrl,
+        'imageUrl': imageUrl, // Ensure this field is consistent
       });
       print('Product saved successfully');
     } catch (e) {
@@ -16,4 +16,6 @@ class FirestoreService {
       throw e;
     }
   }
+
+  void deletproduct(param0) {}
 }

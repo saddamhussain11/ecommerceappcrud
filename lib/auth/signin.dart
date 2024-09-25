@@ -66,11 +66,12 @@ class _SignInScreenState extends State<SignInScreen> {
                 // Password Field
                 TextFormField(
                   controller: signinservices.password,
+                  keyboardType: TextInputType.visiblePassword,
                   decoration: InputDecoration(
                     labelText: 'Password',
                     border: const OutlineInputBorder(),
                     suffixIcon: IconButton(
-                      icon: const Icon(Icons.visibility),
+                      icon:  Icon(Icons.visibility),
                       onPressed: () {
                         // Toggle password visibility
                         setState(() {

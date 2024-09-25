@@ -1,5 +1,9 @@
 
+import 'package:ecommerceappcrud/adminside/addproductscreen.dart';
+import 'package:ecommerceappcrud/adminside/optionscreen.dart';
 import 'package:ecommerceappcrud/auth/signin.dart';
+import 'package:ecommerceappcrud/selection_screen.dart';
+import 'package:ecommerceappcrud/userside/homescreen.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -16,7 +20,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      home: SignInScreen(),
+      home:SelectionScreen(),
     );
   }
 }

@@ -1,24 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-class Product {
-  final String name;
-  final String price;
-  final String imagePath;
+final db = FirebaseFirestore.instance;
 
-  Product({required this.name, required this.price, required this.imagePath});
-}
-
-class ProductScreen extends StatelessWidget {
+class addProductScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    // Sample list of products
-    List<Product> productList = [
-      Product(name: "Product 1", price: "10.00", imagePath: "assets/image/download (6).jpeg"),
-      Product(name: "Product 2", price: "20.00", imagePath: "assets/image/download (6).jpeg"),
-      Product(name: "Product 3", price: "30.00", imagePath: "assets/image/download (6).jpeg"),
-      // Add more products if needed
-    ];
-
     return Scaffold(
       appBar: AppBar(
         title: Text("Product Screen"),
@@ -26,65 +13,100 @@ class ProductScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
-          // Image Slider
-          Container(
-            height: 200, // Adjust the height as needed
-            child: PageView(
-              children: [
-                Image.asset('assets/image/download (3).jpeg', fit: BoxFit.cover),
-                Image.asset('assets/image/download (3).jpeg', fit: BoxFit.cover),
-                Image.asset('assets/image/download (3).jpeg', fit: BoxFit.cover),
-              ],
-            ),
-          ),
-          SizedBox(height: 16), // Space between slider and grid
+          SizedBox(height: 16),
+          StreamBuilder(
+            stream: db.collection('products').snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return Center(child: Text('Error Loading Products'));
+              } else if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return Center(child: Text("No products available"));
+              }
 
-          // GridView of Products
-          Expanded(
-            child: GridView.builder(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2, // Number of columns in the grid
-                crossAxisSpacing: 8, // Horizontal spacing between items
-                mainAxisSpacing: 8, // Vertical spacing between items
-                childAspectRatio: 0.75, // Adjust the aspect ratio to fit your design
-              ),
-              itemCount: productList.length,
-              itemBuilder: (context, index) {
-                final product = productList[index];
-                return Card(
-                  elevation: 4,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Image.asset(
-                        product.imagePath,
-                        width: double.infinity,
-                        height: 100,
-                        fit: BoxFit.cover,
+              final productList = snapshot.data!.docs;
+
+              return Expanded(
+                child: Column(
+                  children: [
+                    // Image Slider using PageView.builder with Image.network
+                    Container(
+                      height: 200, // Adjust the height as needed
+                      child: PageView.builder(
+                        itemCount: productList.length, // Number of items in the slider
+                        itemBuilder: (context, index) {
+                          final imageUrl = productList[index]["imageUrl"]; // Make sure this is correct
+                          return imageUrl != null && imageUrl.isNotEmpty
+                              ? Image.network(
+                                  imageUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Icon(Icons.broken_image, size: 100); // Fallback in case of an error
+                                  },
+                                )
+                              : Icon(Icons.broken_image, size: 100); // Fallback for missing URL
+                        },
                       ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          product.name,
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Expanded(
+                      child: GridView.builder(
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2, // Number of columns in the grid
+                          crossAxisSpacing: 8, // Horizontal spacing between items
+                          mainAxisSpacing: 8, // Vertical spacing between items
+                          childAspectRatio: 0.75, // Adjust the aspect ratio to fit your design
                         ),
+                        itemCount: productList.length,
+                        itemBuilder: (context, index) {
+                          // Extract product data
+                          final product = productList[index];
+                          final imageUrl = product["imageUrl"]; // Ensure correct Firestore field name
+                
+                          return Card(
+                            elevation: 4,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Check if imageUrl exists and is valid
+                                imageUrl != null && imageUrl.isNotEmpty
+                                    ? Image.network(
+                                        imageUrl,
+                                        width: double.infinity,
+                                        height: 100,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return Icon(Icons.broken_image, size: 100); // Fallback in case of an error
+                                        },
+                                      )
+                                    : Icon(Icons.broken_image, size: 100), // Fallback for missing URL
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Text(
+                                    product["name"] ?? "No Name",
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                  child: Text(
+                                    "\$${product['price'] ?? '0.00'}",
+                                    style: TextStyle(color: Colors.grey[600]),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
                       ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: Text(
-                          "\$${product.price}",
-                          style: TextStyle(color: Colors.grey[600]),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
         ],
       ),
     );
   }
 }
-

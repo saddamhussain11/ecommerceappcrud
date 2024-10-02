@@ -16,15 +16,4 @@ class ProductService {
     }
   }
 
-//   // Method to update product by document ID
-//   Future<void> updateProduct(
-//     String productId,
-//    Map<String, dynamic> updatedFields) async {
-//     try {
-//       await _productCollection.doc(productId).update(updatedFields);
-//       print('Product updated successfully');
-//     } catch (e) {
-//       Get.snackbar('Error Message', e.toString());
-//     }
-//   }
 }
